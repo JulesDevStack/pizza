@@ -2,39 +2,68 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caisse Pizzeria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Caisse Pizzeria Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
-        .pizza-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .pizza-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 12px; 
+        }
+        /* Animation du tiroir latéral */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        .sidebar-hidden { transform: translateX(100%); }
+        .sidebar-visible { transform: translateX(0); }
     </style>
 </head>
-<body class="bg-gray-100 font-sans pb-40">
+<body class="bg-gray-50 font-sans">
 
-    <header class="bg-red-600 text-white p-4 shadow-md sticky top-0 z-10">
-        <h1 class="text-xl font-bold text-center">🍕 Caisse Pizzeria</h1>
+    <header class="fixed top-0 left-0 right-0 bg-red-600 text-white h-16 shadow-lg z-30 flex items-center justify-between px-4">
+        <div class="flex flex-col">
+            <span class="text-[10px] uppercase opacity-80 font-bold">Total Commande</span>
+            <span id="total-header" class="text-xl font-black">0.00€</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button onclick="clearOrder()" class="bg-red-700 hover:bg-red-800 p-2 rounded-lg border border-red-500 active:scale-95 transition">
+                <span class="text-xs font-bold text-white">RESET</span>
+            </button>
+            <button onclick="toggleSidebar()" class="bg-white text-red-600 p-2 rounded-lg font-bold shadow-sm active:scale-95 transition flex items-center gap-1">
+                🛒 <span id="count-badge" class="bg-red-600 text-white text-[10px] px-1.5 rounded-full">0</span>
+            </button>
+        </div>
     </header>
 
-    <main class="p-4">
+    <main class="p-4 mt-20 mb-10">
         <div id="menu" class="pizza-grid">
             </div>
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 shadow-lg p-4 max-h-[40vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-lg">Commande Actuelle</h2>
-            <button onclick="clearOrder()" class="text-red-500 text-sm font-semibold uppercase">Vider</button>
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white z-40 sidebar-hidden flex flex-col">
+        <div class="p-4 bg-gray-100 border-b flex justify-between items-center mt-16">
+            <h2 class="font-bold text-gray-700 uppercase text-sm">Détails</h2>
+            <button onclick="toggleSidebar()" class="text-gray-400 text-2xl font-light">&times;</button>
         </div>
         
-        <ul id="order-list" class="divide-y divide-gray-100 mb-4">
-            </ul>
-
-        <div class="flex justify-between items-center bg-gray-900 text-white p-4 rounded-lg">
-            <span class="text-xl font-bold">TOTAL</span>
-            <span id="total-price" class="text-2xl font-black">0.00€</span>
+        <div id="order-details" class="flex-grow overflow-y-auto p-4 divide-y">
+            <p class="text-gray-400 text-center mt-10 text-sm">La commande est vide</p>
         </div>
-    </footer>
+
+        <div class="p-4 bg-gray-900 text-white">
+            <div class="flex justify-between items-center">
+                <span class="font-bold">TOTAL</span>
+                <span id="total-sidebar" class="text-xl font-black">0.00€</span>
+            </div>
+            <button onclick="toggleSidebar()" class="w-full mt-4 bg-red-600 py-3 rounded-xl font-bold uppercase text-sm tracking-wider">Fermer</button>
+        </div>
+    </aside>
+
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/20 z-35 hidden"></div>
 
     <script>
         const pizzas = [
@@ -62,18 +91,28 @@
             const menuDiv = document.getElementById('menu');
             pizzas.forEach(pizza => {
                 const card = document.createElement('div');
-                card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2";
+                card.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3";
                 card.innerHTML = `
-                    <h3 class="font-bold text-gray-800 text-sm h-10 flex items-center">${pizza.n}</h3>
-                    <button onclick="addToOrder('${pizza.n}', ${pizza.p}, 'Part')" class="bg-orange-100 text-orange-700 py-2 rounded font-bold text-sm active:bg-orange-200">
-                        Part: ${pizza.p.toFixed(2)}€
-                    </button>
-                    <button onclick="addToOrder('${pizza.n}', ${pizza.e}, 'Entière')" class="bg-red-100 text-red-700 py-2 rounded font-bold text-sm active:bg-red-200">
-                        Entière: ${pizza.e.toFixed(2)}€
-                    </button>
+                    <h3 class="font-bold text-gray-800 text-sm leading-tight">${pizza.n}</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button onclick="addToOrder('${pizza.n}', ${pizza.p}, 'Part')" class="bg-orange-50 text-orange-700 py-3 rounded-xl font-bold text-xs active:bg-orange-200 border border-orange-100 transition">
+                            Part : ${pizza.p.toFixed(2)}€
+                        </button>
+                        <button onclick="addToOrder('${pizza.n}', ${pizza.e}, 'Entière')" class="bg-red-50 text-red-700 py-3 rounded-xl font-bold text-xs active:bg-red-200 border border-red-100 transition">
+                            Entière : ${pizza.e.toFixed(2)}€
+                        </button>
+                    </div>
                 `;
                 menuDiv.appendChild(card);
             });
+        }
+
+        function toggleSidebar() {
+            const side = document.getElementById('sidebar');
+            const over = document.getElementById('overlay');
+            side.classList.toggle('sidebar-hidden');
+            side.classList.toggle('sidebar-visible');
+            over.classList.toggle('hidden');
         }
 
         function addToOrder(name, price, type) {
@@ -87,33 +126,46 @@
         }
 
         function clearOrder() {
-            if(confirm("Effacer la commande ?")) {
+            if(confirm("Supprimer toute la commande ?")) {
                 order = [];
                 updateUI();
             }
         }
 
         function updateUI() {
-            const list = document.getElementById('order-list');
-            const totalEl = document.getElementById('total-price');
+            const list = document.getElementById('order-details');
+            const totalH = document.getElementById('total-header');
+            const totalS = document.getElementById('total-sidebar');
+            const badge = document.getElementById('count-badge');
+            
             list.innerHTML = "";
             let total = 0;
 
+            if(order.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm">La commande est vide</p>';
+            }
+
             order.forEach((item, index) => {
                 total += item.price;
-                const li = document.createElement('li');
-                li.className = "py-2 flex justify-between items-center text-sm";
-                li.innerHTML = `
-                    <span><b class="text-red-600">${item.type}</b> ${item.name}</span>
-                    <div class="flex items-center gap-3">
-                        <span>${item.price.toFixed(2)}€</span>
-                        <button onclick="removeFromOrder(${index})" class="text-gray-400 font-bold px-2">✕</button>
+                const div = document.createElement('div');
+                div.className = "py-3 flex justify-between items-center animate-in slide-in-from-right-2";
+                div.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold text-red-600 uppercase">${item.type}</span>
+                        <span class="text-sm font-medium text-gray-800">${item.name}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-sm">${item.price.toFixed(2)}€</span>
+                        <button onclick="removeFromOrder(${index})" class="text-red-300 text-xl font-light hover:text-red-500">✕</button>
                     </div>
                 `;
-                list.appendChild(li);
+                list.appendChild(div);
             });
 
-            totalEl.innerText = total.toFixed(2) + "€";
+            const formattedTotal = total.toFixed(2) + "€";
+            totalH.innerText = formattedTotal;
+            totalS.innerText = formattedTotal;
+            badge.innerText = order.length;
         }
 
         initMenu();
