@@ -3,63 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Caisse Pizzeria Pro</title>
+    <title>Caisse Pizzeria</title>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Caisse Pizza">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
+        
         .pizza-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
             gap: 12px; 
         }
-        /* Animation du tiroir latéral */
+
         #sidebar {
             transition: transform 0.3s ease-in-out;
             box-shadow: -5px 0 15px rgba(0,0,0,0.1);
         }
         .sidebar-hidden { transform: translateX(100%); }
         .sidebar-visible { transform: translateX(0); }
+
+        /* --- BADGES PERMANENTS --- */
+        .click-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .pizza-btn {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            transition: all 0.1s ease;
+        }
+
+        .pizza-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Style du badge qui reste affiché */
+        .count-badge-btn {
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: none; /* Caché par défaut */
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            pointer-events: none;
+        }
+
+        /* Classe pour afficher le badge */
+        .badge-visible {
+            display: flex;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: translateY(-50%) scale(0); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
 
     <header class="fixed top-0 left-0 right-0 bg-red-600 text-white h-16 shadow-lg z-30 flex items-center justify-between px-4">
         <div class="flex flex-col">
-            <span class="text-[10px] uppercase opacity-80 font-bold">Total Commande</span>
+            <span class="text-[10px] uppercase opacity-80 font-bold text-white">Total Commande</span>
             <span id="total-header" class="text-xl font-black">0.00€</span>
         </div>
 
         <div class="flex items-center gap-2">
-            <button onclick="clearOrder()" class="bg-red-700 hover:bg-red-800 p-2 rounded-lg border border-red-500 active:scale-95 transition">
-                <span class="text-xs font-bold text-white">RESET</span>
-            </button>
-            <button onclick="toggleSidebar()" class="bg-white text-red-600 p-2 rounded-lg font-bold shadow-sm active:scale-95 transition flex items-center gap-1">
+            <button onclick="clearOrder()" class="bg-red-700 p-2 rounded-lg border border-red-500 active:bg-red-900 transition text-xs font-bold">RESET</button>
+            <button onclick="toggleSidebar()" class="bg-white text-red-600 p-2 rounded-lg font-bold shadow-sm flex items-center gap-1">
                 🛒 <span id="count-badge" class="bg-red-600 text-white text-[10px] px-1.5 rounded-full">0</span>
             </button>
         </div>
     </header>
 
     <main class="p-4 mt-20 mb-10">
-        <div id="menu" class="pizza-grid">
-            </div>
+        <div id="menu" class="pizza-grid"></div>
     </main>
 
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white z-40 sidebar-hidden flex flex-col">
         <div class="p-4 bg-gray-100 border-b flex justify-between items-center mt-16">
-            <h2 class="font-bold text-gray-700 uppercase text-sm">Détails</h2>
-            <button onclick="toggleSidebar()" class="text-gray-400 text-2xl font-light">&times;</button>
+            <h2 class="font-bold text-gray-700 uppercase text-sm">Récapitulatif</h2>
+            <button onclick="toggleSidebar()" class="text-gray-400 text-2xl">&times;</button>
         </div>
-        
-        <div id="order-details" class="flex-grow overflow-y-auto p-4 divide-y">
-            <p class="text-gray-400 text-center mt-10 text-sm">La commande est vide</p>
-        </div>
-
+        <div id="order-details" class="flex-grow overflow-y-auto p-4 divide-y text-sm"></div>
         <div class="p-4 bg-gray-900 text-white">
             <div class="flex justify-between items-center">
                 <span class="font-bold">TOTAL</span>
                 <span id="total-sidebar" class="text-xl font-black">0.00€</span>
             </div>
-            <button onclick="toggleSidebar()" class="w-full mt-4 bg-red-600 py-3 rounded-xl font-bold uppercase text-sm tracking-wider">Fermer</button>
+            <button onclick="toggleSidebar()" class="w-full mt-4 bg-red-600 py-3 rounded-xl font-bold uppercase text-sm">Fermer</button>
         </div>
     </aside>
 
@@ -67,22 +116,22 @@
 
     <script>
         const pizzas = [
-            { n: "Anchois", p: 2.5, e: 10.0 },
-            { n: "Fromage", p: 2.5, e: 10.0 },
-            { n: "Champignons", p: 2.7, e: 10.8 },
-            { n: "Jambon", p: 2.7, e: 10.8 },
-            { n: "Mozzarella", p: 2.9, e: 11.6 },
-            { n: "Royale", p: 2.9, e: 11.6 },
-            { n: "3 Fromages", p: 3.1, e: 12.4 },
-            { n: "Bolognaise", p: 3.1, e: 12.4 },
-            { n: "Chorizo", p: 3.1, e: 12.4 },
-            { n: "Légumes Mozza", p: 3.3, e: 13.2 },
-            { n: "Royale Crème", p: 3.3, e: 13.2 },
-            { n: "Bari", p: 3.5, e: 14.0 },
-            { n: "4 Fromages", p: 3.7, e: 14.8 },
-            { n: "Capri", p: 3.7, e: 14.8 },
-            { n: "Saumon", p: 4.0, e: 16.0 },
-            { n: "Tartufata", p: 4.0, e: 16.0 }
+            { id: "anch", n: "Anchois", p: 2.5, e: 10.0 },
+            { id: "from", n: "Fromage", p: 2.5, e: 10.0 },
+            { id: "cham", n: "Champignons", p: 2.7, e: 10.8 },
+            { id: "jamb", n: "Jambon", p: 2.7, e: 10.8 },
+            { id: "mozz", n: "Mozzarella", p: 2.9, e: 11.6 },
+            { id: "roya", n: "Royale", p: 2.9, e: 11.6 },
+            { id: "3fro", n: "3 Fromages", p: 3.1, e: 12.4 },
+            { id: "bolo", n: "Bolognaise", p: 3.1, e: 12.4 },
+            { id: "chor", n: "Chorizo", p: 3.1, e: 12.4 },
+            { id: "legu", n: "Légumes Mozza", p: 3.3, e: 13.2 },
+            { id: "royc", n: "Royale Crème", p: 3.3, e: 13.2 },
+            { id: "bari", n: "Bari", p: 3.5, e: 14.0 },
+            { id: "4fro", n: "4 Fromages", p: 3.7, e: 14.8 },
+            { id: "capr", n: "Capri", p: 3.7, e: 14.8 },
+            { id: "saum", n: "Saumon", p: 4.0, e: 16.0 },
+            { id: "tart", n: "Tartufata", p: 4.0, e: 16.0 }
         ];
 
         let order = [];
@@ -93,30 +142,30 @@
                 const card = document.createElement('div');
                 card.className = "bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3";
                 card.innerHTML = `
-                    <h3 class="font-bold text-gray-800 text-sm leading-tight">${pizza.n}</h3>
-                    <div class="grid grid-cols-1 gap-2">
-                        <button onclick="addToOrder('${pizza.n}', ${pizza.p}, 'Part')" class="bg-orange-50 text-orange-700 py-3 rounded-xl font-bold text-xs active:bg-orange-200 border border-orange-100 transition">
-                            Part : ${pizza.p.toFixed(2)}€
-                        </button>
-                        <button onclick="addToOrder('${pizza.n}', ${pizza.e}, 'Entière')" class="bg-red-50 text-red-700 py-3 rounded-xl font-bold text-xs active:bg-red-200 border border-red-100 transition">
-                            Entière : ${pizza.e.toFixed(2)}€
-                        </button>
+                    <h3 class="font-bold text-gray-800 text-sm leading-tight h-8 flex items-center">${pizza.n}</h3>
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="click-container">
+                            <div id="badge-${pizza.id}-Part" class="count-badge-btn" style="background-color: #E5A64C">0</div>
+                            <button onclick="addToOrder('${pizza.id}', 'Part')" class="pizza-btn bg-[#FDF1E2] text-[#835624] py-3 rounded-xl font-extrabold text-sm border border-[#F6DCC0]">
+                                Part : ${pizza.p.toFixed(2)}€
+                            </button>
+                        </div>
+                        <div class="click-container">
+                            <div id="badge-${pizza.id}-Entière" class="count-badge-btn" style="background-color: #CB5D55">0</div>
+                            <button onclick="addToOrder('${pizza.id}', 'Entière')" class="pizza-btn bg-[#F9E6E5] text-[#863C38] py-3 rounded-xl font-extrabold text-sm border border-[#EAC9C8]">
+                                Entière : ${pizza.e.toFixed(2)}€
+                            </button>
+                        </div>
                     </div>
                 `;
                 menuDiv.appendChild(card);
             });
         }
 
-        function toggleSidebar() {
-            const side = document.getElementById('sidebar');
-            const over = document.getElementById('overlay');
-            side.classList.toggle('sidebar-hidden');
-            side.classList.toggle('sidebar-visible');
-            over.classList.toggle('hidden');
-        }
-
-        function addToOrder(name, price, type) {
-            order.push({ name, price, type });
+        function addToOrder(pizzaId, type) {
+            const pizza = pizzas.find(p => p.id === pizzaId);
+            const price = type === 'Part' ? pizza.p : pizza.e;
+            order.push({ id: pizzaId, name: pizza.n, price: price, type: type });
             updateUI();
         }
 
@@ -126,7 +175,7 @@
         }
 
         function clearOrder() {
-            if(confirm("Supprimer toute la commande ?")) {
+            if(confirm("Vider la commande ?")) {
                 order = [];
                 updateUI();
             }
@@ -136,36 +185,64 @@
             const list = document.getElementById('order-details');
             const totalH = document.getElementById('total-header');
             const totalS = document.getElementById('total-sidebar');
-            const badge = document.getElementById('count-badge');
+            const badgeCount = document.getElementById('count-badge');
             
             list.innerHTML = "";
             let total = 0;
 
-            if(order.length === 0) {
-                list.innerHTML = '<p class="text-gray-400 text-center mt-10 text-sm">La commande est vide</p>';
-            }
+            // Reset tous les badges boutons à zéro et cachés
+            document.querySelectorAll('.count-badge-btn').forEach(b => {
+                b.innerText = "0";
+                b.classList.remove('badge-visible');
+            });
+
+            // Objet pour compter les occurrences
+            const counts = {};
 
             order.forEach((item, index) => {
                 total += item.price;
+                
+                // Comptage pour les badges
+                const key = `badge-${item.id}-${item.type}`;
+                counts[key] = (counts[key] || 0) + 1;
+
+                // Affichage liste sidebar
                 const div = document.createElement('div');
-                div.className = "py-3 flex justify-between items-center animate-in slide-in-from-right-2";
+                div.className = "py-3 flex justify-between items-center";
                 div.innerHTML = `
                     <div class="flex flex-col">
-                        <span class="text-xs font-bold text-red-600 uppercase">${item.type}</span>
-                        <span class="text-sm font-medium text-gray-800">${item.name}</span>
+                        <span class="text-[10px] font-bold text-red-600 uppercase">${item.type}</span>
+                        <span class="font-medium">${item.name}</span>
                     </div>
                     <div class="flex items-center gap-4">
-                        <span class="font-bold text-sm">${item.price.toFixed(2)}€</span>
-                        <button onclick="removeFromOrder(${index})" class="text-red-300 text-xl font-light hover:text-red-500">✕</button>
+                        <span class="font-bold">${item.price.toFixed(2)}€</span>
+                        <button onclick="removeFromOrder(${index})" class="text-red-300 text-xl">✕</button>
                     </div>
                 `;
                 list.appendChild(div);
             });
 
-            const formattedTotal = total.toFixed(2) + "€";
-            totalH.innerText = formattedTotal;
-            totalS.innerText = formattedTotal;
-            badge.innerText = order.length;
+            // Appliquer les comptes sur les badges visuels
+            for (const id in counts) {
+                const badgeElement = document.getElementById(id);
+                if (badgeElement) {
+                    badgeElement.innerText = counts[id];
+                    badgeElement.classList.add('badge-visible');
+                }
+            }
+
+            if(order.length === 0) list.innerHTML = '<p class="text-gray-400 text-center mt-10">Vide</p>';
+
+            const totalStr = total.toFixed(2) + "€";
+            totalH.innerText = totalStr;
+            totalS.innerText = totalStr;
+            badgeCount.innerText = order.length;
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('sidebar-hidden');
+            document.getElementById('sidebar').classList.toggle('sidebar-visible');
+            document.getElementById('overlay').classList.toggle('hidden');
         }
 
         initMenu();
