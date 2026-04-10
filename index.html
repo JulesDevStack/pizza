@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisse Pizzeria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .pizza-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans pb-40">
+
+    <header class="bg-red-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <h1 class="text-xl font-bold text-center">🍕 Caisse Pizzeria</h1>
+    </header>
+
+    <main class="p-4">
+        <div id="menu" class="pizza-grid">
+            </div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 shadow-lg p-4 max-h-[40vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-lg">Commande Actuelle</h2>
+            <button onclick="clearOrder()" class="text-red-500 text-sm font-semibold uppercase">Vider</button>
+        </div>
+        
+        <ul id="order-list" class="divide-y divide-gray-100 mb-4">
+            </ul>
+
+        <div class="flex justify-between items-center bg-gray-900 text-white p-4 rounded-lg">
+            <span class="text-xl font-bold">TOTAL</span>
+            <span id="total-price" class="text-2xl font-black">0.00€</span>
+        </div>
+    </footer>
+
+    <script>
+        const pizzas = [
+            { n: "Anchois", p: 2.5, e: 10.0 },
+            { n: "Fromage", p: 2.5, e: 10.0 },
+            { n: "Champignons", p: 2.7, e: 10.8 },
+            { n: "Jambon", p: 2.7, e: 10.8 },
+            { n: "Mozzarella", p: 2.9, e: 11.6 },
+            { n: "Royale", p: 2.9, e: 11.6 },
+            { n: "3 Fromages", p: 3.1, e: 12.4 },
+            { n: "Bolognaise", p: 3.1, e: 12.4 },
+            { n: "Chorizo", p: 3.1, e: 12.4 },
+            { n: "Légumes Mozza", p: 3.3, e: 13.2 },
+            { n: "Royale Crème", p: 3.3, e: 13.2 },
+            { n: "Bari", p: 3.5, e: 14.0 },
+            { n: "4 Fromages", p: 3.7, e: 14.8 },
+            { n: "Capri", p: 3.7, e: 14.8 },
+            { n: "Saumon", p: 4.0, e: 16.0 },
+            { n: "Tartufata", p: 4.0, e: 16.0 }
+        ];
+
+        let order = [];
+
+        function initMenu() {
+            const menuDiv = document.getElementById('menu');
+            pizzas.forEach(pizza => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2";
+                card.innerHTML = `
+                    <h3 class="font-bold text-gray-800 text-sm h-10 flex items-center">${pizza.n}</h3>
+                    <button onclick="addToOrder('${pizza.n}', ${pizza.p}, 'Part')" class="bg-orange-100 text-orange-700 py-2 rounded font-bold text-sm active:bg-orange-200">
+                        Part: ${pizza.p.toFixed(2)}€
+                    </button>
+                    <button onclick="addToOrder('${pizza.n}', ${pizza.e}, 'Entière')" class="bg-red-100 text-red-700 py-2 rounded font-bold text-sm active:bg-red-200">
+                        Entière: ${pizza.e.toFixed(2)}€
+                    </button>
+                `;
+                menuDiv.appendChild(card);
+            });
+        }
+
+        function addToOrder(name, price, type) {
+            order.push({ name, price, type });
+            updateUI();
+        }
+
+        function removeFromOrder(index) {
+            order.splice(index, 1);
+            updateUI();
+        }
+
+        function clearOrder() {
+            if(confirm("Effacer la commande ?")) {
+                order = [];
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            const list = document.getElementById('order-list');
+            const totalEl = document.getElementById('total-price');
+            list.innerHTML = "";
+            let total = 0;
+
+            order.forEach((item, index) => {
+                total += item.price;
+                const li = document.createElement('li');
+                li.className = "py-2 flex justify-between items-center text-sm";
+                li.innerHTML = `
+                    <span><b class="text-red-600">${item.type}</b> ${item.name}</span>
+                    <div class="flex items-center gap-3">
+                        <span>${item.price.toFixed(2)}€</span>
+                        <button onclick="removeFromOrder(${index})" class="text-gray-400 font-bold px-2">✕</button>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+
+            totalEl.innerText = total.toFixed(2) + "€";
+        }
+
+        initMenu();
+    </script>
+</body>
+</html>
